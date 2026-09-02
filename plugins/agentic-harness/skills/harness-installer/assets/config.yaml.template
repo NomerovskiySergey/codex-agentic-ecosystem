@@ -1,0 +1,28 @@
+version: 1
+project:
+  name: null
+  root: null
+knowledge_mode: hybrid
+verification:
+  format: null
+  lint: null
+  typecheck: null
+  unit: null
+  integration: null
+  e2e: null
+security:
+  sensitive_paths: []
+  out_of_scope_paths: []
+  hardened_mode:
+    enabled: false
+    execution: worktree_cli
+    worktree_root: .agent-harness/worktrees
+git:
+  default_base_branch: null
+model_policy:
+  explorer: { model: gpt-5.6-terra, reasoning_effort: medium }
+  implementer: { model: gpt-5.6-sol, reasoning_effort: high }
+  code_reviewer: { model: gpt-5.6-terra, reasoning_effort: high }
+  tester: { model: gpt-5.6-terra, reasoning_effort: medium }
+  bugfixer: { model: gpt-5.6-terra, reasoning_effort: medium }
+  knowledge_curator: { model: gpt-5.6-luna, reasoning_effort: low }

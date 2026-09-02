@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agentic Harness dashboard</title>
+  <style>
+    :root { color-scheme: light dark; font-family: ui-sans-serif, system-ui, sans-serif; }
+    body { margin: 0; padding: 16px; background: Canvas; color: CanvasText; }
+    header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+    h1 { font-size: 18px; margin: 0; } h2 { font-size: 14px; margin: 0 0 8px; }
+    .eyebrow { color: #15805d; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+    .card { border: 1px solid color-mix(in srgb, CanvasText 18%, Canvas); border-radius: 10px; margin-top: 12px; padding: 12px; }
+    .status { font-weight: 650; } .muted { opacity: .72; } .error { color: #bc2525; }
+    .gate, .event { border-top: 1px solid color-mix(in srgb, CanvasText 12%, Canvas); padding: 8px 0; }
+    .gate:first-child, .event:first-child { border-top: 0; }
+    .verification { border-top: 1px solid color-mix(in srgb, CanvasText 12%, Canvas); padding: 8px 0; }
+    .verification:first-child { border-top: 0; } .pass { color: #15805d; } .fail { color: #bc2525; }
+    pre { margin: 6px 0 0; max-height: 140px; overflow: auto; padding: 8px; white-space: pre-wrap; background: color-mix(in srgb, CanvasText 6%, Canvas); border-radius: 6px; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    button { appearance: none; border: 1px solid color-mix(in srgb, CanvasText 30%, Canvas); border-radius: 6px; background: ButtonFace; color: ButtonText; cursor: pointer; font: inherit; font-size: 12px; margin-left: 6px; padding: 5px 8px; }
+    button.primary { background: #147d59; border-color: #147d59; color: white; } button:disabled { cursor: wait; opacity: .6; }
+    #events, #feature-history { max-height: 220px; overflow: auto; } time { display: block; font-size: 11px; opacity: .65; margin-top: 2px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; } .metric { border-radius: 7px; background: color-mix(in srgb, CanvasText 6%, Canvas); padding: 8px; } .metric strong { display:block; font-size:16px; } .metric span { font-size:11px; opacity:.72; }
+    .feature-button { display:flex; width:100%; text-align:left; justify-content:space-between; margin:0 0 5px; } .feature-button.active { border-color:#147d59; } .git-file { font:11px ui-monospace, monospace; padding:3px 0; }
+  </style>
+</head>
+<body>
+  <header><div><div class="eyebrow">AGENTIC HARNESS</div><h1 id="title">Workflow dashboard</h1></div><span id="connection" class="muted">Connecting…</span></header>
+  <section class="card"><div id="status" class="muted">Waiting for feature data.</div><div id="gates"></div></section>
+  <section class="card"><h2>Recorded model usage</h2><div id="metrics" class="grid muted">No usage data recorded.</div></section>
+  <section class="card"><h2>Git &amp; diff</h2><div id="git" class="muted">Waiting for Git status.</div></section>
+  <section class="card"><h2>Feature history</h2><div id="feature-history" class="muted">No features recorded.</div></section>
+  <section class="card"><h2>Verification</h2><div id="verifications" class="muted">No verification runs yet.</div></section>
+  <section class="card"><h2>Recent activity</h2><div id="events" class="muted">No events yet.</div></section>
+  <script>
+    (() => {
+      const connection = document.querySelector('#connection');
+      const title = document.querySelector('#title');
+      const status = document.querySelector('#status');
+      const gates = document.querySelector('#gates');
+      const verifications = document.querySelector('#verifications');
+      const events = document.querySelector('#events');
+      const metrics = document.querySelector('#metrics');
+      const git = document.querySelector('#git');
+      const featureHistory = document.querySelector('#feature-history');
+      const pending = new Map(); let nextId = 1; let latest = null;
+      function request(method, params) {
+        const id = nextId++;
+        window.parent.postMessage({ jsonrpc: '2.0', id, method, params }, '*');
+        return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+      }
+      function escape(value) { const el = document.createElement('span'); el.textContent = String(value || ''); return el.innerHTML; }
+      function render(data) {
+        latest = data || {}; const feature = latest.feature;
+        connection.textContent = 'Live via MCP';
+        if (!feature) { title.textContent = 'Workflow dashboard'; status.textContent = 'No feature selected. Ask the agent to render a feature dashboard.'; gates.innerHTML = ''; }
+        else {
+          title.textContent = feature.id; status.innerHTML = '<span class="status">Stage: ' + escape(feature.status) + '</span>';
+          gates.innerHTML = (feature.pending_approvals || []).map((gate) => '<div class="gate"><strong>' + escape(gate) + '</strong><button class="primary" data-gate="' + escape(gate) + '" data-decision="approved">Approve</button><button data-gate="' + escape(gate) + '" data-decision="amended">Request changes</button></div>').join('') || '<p class="muted">No pending approvals.</p>';
+        }
+        verifications.innerHTML = (latest.verifications || []).map((verification) => '<div class="verification"><strong class="' + (verification.ok ? 'pass' : 'fail') + '">' + (verification.ok ? 'PASS' : 'FAIL') + '</strong> · ' + escape(verification.category) + ' · <code>' + escape((verification.command || []).join(' ')) + '</code><time>' + escape(verification.at || verification.started_at) + ' · exit ' + escape(verification.exit_code === null ? 'n/a' : verification.exit_code) + '</time>' + (verification.output ? '<pre>' + escape(verification.output) + '</pre>' : '') + '</div>').join('') || '<span class="muted">No verification runs yet.</span>';
+        const usage = latest.metrics || {}; const money = Number(usage.cost_usd || 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+        metrics.innerHTML = usage.recorded_runs ? '<div class="metric"><strong>' + escape(usage.total_tokens || 0) + '</strong><span>total tokens</span></div><div class="metric"><strong>' + escape(usage.input_tokens || 0) + '</strong><span>input tokens</span></div><div class="metric"><strong>' + escape(usage.output_tokens || 0) + '</strong><span>output tokens</span></div><div class="metric"><strong>' + escape(usage.cached_tokens || 0) + '</strong><span>cached tokens</span></div><div class="metric"><strong>' + escape(money) + '</strong><span>recorded cost · ' + escape(usage.recorded_runs) + ' runs</span></div>' : '<span class="muted">No usage data recorded. Values appear only when an agent/runtime records actual usage.</span>';
+        const gitState = latest.git || {}; if (!gitState.available) git.innerHTML = '<span class="muted">' + escape(gitState.reason || 'Git status unavailable.') + '</span>'; else { const diff = gitState.diff || {}; const changeList = (gitState.changes || []).map((change) => '<div class="git-file">' + escape(change.status) + ' · ' + escape(change.path) + '</div>').join('') || '<div class="muted">No working-tree changes.</div>'; git.innerHTML = '<strong>' + escape(gitState.branch) + '</strong> · ' + escape(gitState.head || 'no commit') + ' · ' + (gitState.clean ? '<span class="pass">clean</span>' : '<span class="fail">changes pending</span>') + '<time>' + escape(diff.files_changed || 0) + ' files · +' + escape(diff.insertions || 0) + ' / -' + escape(diff.deletions || 0) + '</time>' + changeList; }
+        featureHistory.innerHTML = (latest.features || []).map((item) => '<button class="feature-button ' + (feature && item.id === feature.id ? 'active' : '') + '" data-feature-id="' + escape(item.id) + '"><span><strong>' + escape(item.id) + '</strong> · ' + escape(item.title) + '</span><span class="muted">' + escape(item.status) + '</span></button>').join('') || '<span class="muted">No features recorded.</span>';
+        events.innerHTML = (latest.events || []).map((event) => '<div class="event"><strong>' + escape(event.event) + '</strong><time>' + escape(event.at) + '</time></div>').join('') || '<span class="muted">No events yet.</span>';
+      }
+      function renderToolResult(result) {
+        if (result) render(result.structuredContent || result);
+      }
+      async function approval(button) {
+        if (!latest || !latest.feature) return; button.disabled = true;
+        try {
+          const result = await request('tools/call', { name: 'harness_record_approval', arguments: { project_root: latest.project_root, feature_id: latest.feature.id, gate: button.dataset.gate, decision: button.dataset.decision, rationale: 'Decision recorded from embedded dashboard.' } });
+          await refresh();
+        } catch (error) { status.innerHTML = '<span class="error">' + escape(error.message || 'Unable to record approval.') + '</span>'; }
+        finally { button.disabled = false; }
+      }
+      async function refresh() {
+        if (!latest || !latest.project_root) return;
+        const result = await request('tools/call', { name: 'harness_activity_feed', arguments: { project_root: latest.project_root, feature_id: latest.feature && latest.feature.id } });
+        if (result && result.structuredContent) render(result.structuredContent);
+      }
+      gates.addEventListener('click', (event) => { const button = event.target.closest('button[data-gate]'); if (button) approval(button); });
+      featureHistory.addEventListener('click', async (event) => { const button = event.target.closest('button[data-feature-id]'); if (!button || !latest || !latest.project_root) return; const result = await request('tools/call', { name: 'harness_activity_feed', arguments: { project_root: latest.project_root, feature_id: button.dataset.featureId } }); if (result && result.structuredContent) render(result.structuredContent); });
+      window.addEventListener('message', (event) => {
+        if (event.source !== window.parent) return; const message = event.data;
+        if (!message || message.jsonrpc !== '2.0') return;
+        if (message.id !== undefined && pending.has(message.id)) { const item = pending.get(message.id); pending.delete(message.id); if (message.error) item.reject(message.error); else item.resolve(message.result); return; }
+        if (message.method === 'ui/notifications/tool-result') renderToolResult(message.params);
+      });
+      // ChatGPT/Codex compatibility bridge: some hosts expose the initial tool
+      // result before the iframe subscribes to postMessage notifications.
+      if (window.openai && window.openai.toolOutput) renderToolResult(window.openai.toolOutput);
+      window.parent.postMessage({ jsonrpc: '2.0', id: nextId++, method: 'ui/initialize', params: { protocolVersion: '2025-06-18', clientInfo: { name: 'agentic-harness-dashboard', version: '0.1.0' }, capabilities: {} } }, '*');
+    })();
+  </script>
+</body>
+</html>

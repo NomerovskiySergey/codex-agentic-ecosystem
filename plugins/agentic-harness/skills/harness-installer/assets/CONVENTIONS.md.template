@@ -1,0 +1,12 @@
+# Conventions
+
+Status: Draft — needs confirmation.
+
+## Code style
+
+Describe formatting, naming, error handling, and module conventions.
+
+## Testing
+
+Describe test placement, naming, fixtures, and test command expectations.
+

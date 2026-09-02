@@ -1,0 +1,26 @@
+{
+  "name": "agentic-harness",
+  "version": "0.1.0+codex.20260902085719",
+  "description": "Approval-gated, TDD-first multi-agent workflow for Codex.",
+  "author": {
+    "name": "Local developer"
+  },
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Agentic Harness",
+    "shortDescription": "TDD-first, approval-gated agent workflow.",
+    "longDescription": "Coordinates exploration, implementation, review, testing, bug fixing, and knowledge curation through auditable human approval gates.",
+    "developerName": "Local developer",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Initialize Agentic Harness for this project.",
+      "Plan a new feature with Agentic Harness.",
+      "Show the approval status of the active feature."
+    ]
+  }
+}

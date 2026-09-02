@@ -1,0 +1,58 @@
+# FEAT-<number>: <title>
+
+## Status
+
+`draft`
+
+## Intent and acceptance criteria
+
+- [ ] Criterion
+
+## Scope
+
+- Allowed paths:
+- Explicit exclusions:
+
+## Explorer proposal
+
+- Evidence:
+- Options and trade-offs:
+- Recommended decision:
+- Risks:
+
+## Human decision
+
+| Gate | Status | Date | Decision maker | Decision/rationale | Requested changes |
+| --- | --- | --- | --- | --- | --- |
+| Solution | pending |  |  |  |  |
+| Test design | pending |  |  |  |  |
+| Branch | pending |  |  |  |  |
+| Review resolution | pending |  |  |  |  |
+| Commit | pending |  |  |  |  |
+| Acceptance | pending |  |  |  |  |
+
+## TDD test plan
+
+- Failing tests to add or change:
+- Verification commands:
+
+## Review findings
+
+| Priority | File | Finding | Required resolution |
+| --- | --- | --- | --- |
+
+## Verification evidence
+
+| Command | Result | Notes |
+| --- | --- | --- |
+
+## Handoffs
+
+| Stage | Status | Evidence | Next action |
+| --- | --- | --- | --- |
+
+## Knowledge updates
+
+- Current context:
+- Decision records:
+- Architecture/conventions:

@@ -1,0 +1,12 @@
+# Architecture
+
+Status: Draft — needs confirmation.
+
+## System map
+
+Describe entry points, modules, data flow, dependencies, and boundaries.
+
+## Invariants
+
+List rules that feature work must preserve.
+
